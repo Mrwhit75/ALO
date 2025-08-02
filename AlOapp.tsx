@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Map, Calendar, Users, Settings, MessageCircle, AlertTriangle, Gift, Clock, Music } from 'lucide-react';
 
 const ALOApp = () => {
@@ -7,12 +7,16 @@ const ALOApp = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [bubbleNotifications, setBubbleNotifications] = useState([]);
-  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'festival-search', 'festival-detail'
+  const [currentPage, setCurrentPage] = useState('home');
   const [selectedFestival, setSelectedFestival] = useState(null);
   const [pinnedPerformers, setPinnedPerformers] = useState([]);
-  const [userLocation, setUserLocation] = useState({ lat: 40.7128, lng: -74.0060 }); // NYC default
+  const [userLocation, setUserLocation] = useState({ lat: 40.7128, lng: -74.0060 });
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [contactsPermission, setContactsPermission] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('day1');
+  const [friends, setFriends] = useState([]);
 
-  // Mock festival data
+  // Mock festival data with daily schedules
   const festivals = [
     {
       id: 1,
@@ -20,6 +24,80 @@ const ALOApp = () => {
       location: "Nevada",
       distance: "2.1 miles",
       date: "Aug 15-17, 2025",
+      days: {
+        day1: {
+          date: "Aug 15, 2025",
+          name: "Day 1 - Opening Night",
+          performers: [
+            { 
+              id: 1, 
+              name: "Sunset Vibes", 
+              stage: "Main Stage", 
+              time: "7:30 PM", 
+              timeLeft: "2h 15m",
+              genre: "Indie Folk",
+              description: "An ethereal indie folk band known for their dreamy harmonies and acoustic storytelling that captures the magic of golden hour."
+            },
+            { 
+              id: 2, 
+              name: "Midnight Groove", 
+              stage: "Electronic Tent", 
+              time: "9:00 PM", 
+              timeLeft: "3h 45m",
+              genre: "Deep House",
+              description: "A dynamic DJ duo that blends deep house with desert vibes, creating hypnotic beats perfect for late-night dancing under the stars."
+            }
+          ]
+        },
+        day2: {
+          date: "Aug 16, 2025",
+          name: "Day 2 - Main Event",
+          performers: [
+            { 
+              id: 3, 
+              name: "Cosmic Journey", 
+              stage: "Acoustic Garden", 
+              time: "6:00 PM", 
+              timeLeft: "Tomorrow",
+              genre: "Psychedelic Rock",
+              description: "A transcendent psychedelic rock collective that takes audiences on sonic adventures through space and consciousness."
+            },
+            { 
+              id: 4, 
+              name: "Desert Winds", 
+              stage: "Main Stage", 
+              time: "8:30 PM", 
+              timeLeft: "Tomorrow",
+              genre: "World Fusion",
+              description: "An experimental world fusion ensemble that weaves together traditional desert instruments with modern electronic elements."
+            }
+          ]
+        },
+        day3: {
+          date: "Aug 17, 2025",
+          name: "Day 3 - Grand Finale",
+          performers: [
+            { 
+              id: 7, 
+              name: "Electric Storm", 
+              stage: "Main Stage", 
+              time: "7:00 PM", 
+              timeLeft: "Sunday",
+              genre: "Electronic",
+              description: "High-energy electronic music that brings lightning to the desert with explosive beats and stunning visual effects."
+            },
+            { 
+              id: 8, 
+              name: "Lunar Eclipse", 
+              stage: "Sunset Stage", 
+              time: "9:45 PM", 
+              timeLeft: "Sunday",
+              genre: "Ambient",
+              description: "Atmospheric ambient music perfect for the festival's closing ceremony under the stars."
+            }
+          ]
+        }
+      },
       performers: [
         { 
           id: 1, 
@@ -65,6 +143,62 @@ const ALOApp = () => {
       location: "Brooklyn, NY",
       distance: "0.8 miles",
       date: "Aug 22-24, 2025",
+      days: {
+        day1: {
+          date: "Aug 22, 2025",
+          name: "Day 1 - Street Sounds",
+          performers: [
+            { 
+              id: 5, 
+              name: "City Lights", 
+              stage: "Main Stage", 
+              time: "6:00 PM", 
+              timeLeft: "50m",
+              genre: "Alternative Hip-Hop",
+              description: "Rising alternative hip-hop artists who paint vivid urban landscapes through clever wordplay and atmospheric production."
+            },
+            { 
+              id: 6, 
+              name: "Underground Collective", 
+              stage: "Warehouse Stage", 
+              time: "8:15 PM", 
+              timeLeft: "3h 5m",
+              genre: "Techno",
+              description: "A legendary techno collective that emerged from Brooklyn's warehouse scene, delivering raw industrial beats with underground authenticity."
+            }
+          ]
+        },
+        day2: {
+          date: "Aug 23, 2025",
+          name: "Day 2 - Electric Nights",
+          performers: [
+            { 
+              id: 9, 
+              name: "Neon Dreams", 
+              stage: "Main Stage", 
+              time: "7:30 PM", 
+              timeLeft: "Tomorrow",
+              genre: "Synthwave",
+              description: "Retro-futuristic synthwave that brings the 80s into the future with pulsing neon energy."
+            }
+          ]
+        },
+        day3: {
+          date: "Aug 24, 2025",
+          name: "Day 3 - Urban Finale",
+          performers: [
+            { 
+              id: 10, 
+              name: "Brooklyn Symphony", 
+              stage: "Main Stage", 
+              time: "8:00 PM", 
+              timeLeft: "Sunday",
+              genre: "Orchestral Hip-Hop",
+              description: "A unique fusion of classical orchestra with modern hip-hop beats."
+            }
+          ]
+        }
+      },
       performers: [
         { 
           id: 5, 
@@ -88,6 +222,65 @@ const ALOApp = () => {
     }
   ];
 
+  // Mock friends data
+  const mockFriends = [
+    { id: 1, name: "Sarah Johnson", avatar: "👩‍🎤", pinnedShows: [1, 3] },
+    { id: 2, name: "Mike Chen", avatar: "🕺", pinnedShows: [2, 4] },
+    { id: 3, name: "Alex Rivera", avatar: "🎸", pinnedShows: [1, 2] },
+    { id: 4, name: "Jordan Kim", avatar: "🎯", pinnedShows: [3] }
+  ];
+
+  // GPS Functions
+  const requestGPSPermission = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setGpsEnabled(true);
+          setBubbleNotifications(prev => [...prev, {
+            id: Date.now(),
+            text: "📍 GPS enabled! Location services active",
+            type: "success",
+            icon: Map
+          }]);
+        },
+        (error) => {
+          setBubbleNotifications(prev => [...prev, {
+            id: Date.now(),
+            text: "❌ GPS permission denied. Using default location",
+            type: "error",
+            icon: AlertTriangle
+          }]);
+        }
+      );
+    } else {
+      setBubbleNotifications(prev => [...prev, {
+        id: Date.now(),
+        text: "📱 GPS not available on this device",
+        type: "info",
+        icon: AlertTriangle
+      }]);
+    }
+  };
+
+  // Contacts Permission
+  const requestContactsPermission = () => {
+    // Simulate contacts permission request
+    setTimeout(() => {
+      setContactsPermission(true);
+      setFriends(mockFriends);
+      setBubbleNotifications(prev => [...prev, {
+        id: Date.now(),
+        text: "👥 Contacts synced! Found festival friends",
+        type: "success",
+        icon: Users
+      }]);
+    }, 1500);
+  };
+
   const findNearestFestival = () => {
     // Simulate GPS functionality
     const nearest = festivals.reduce((prev, curr) => 
@@ -97,7 +290,7 @@ const ALOApp = () => {
     setCurrentPage('festival-detail');
   };
 
-  const togglePinPerformer = useCallback((performer) => {
+  const togglePinPerformer = (performer) => {
     setPinnedPerformers(prev => {
       const isAlreadyPinned = prev.some(p => p.id === performer.id);
       if (isAlreadyPinned) {
@@ -117,31 +310,65 @@ const ALOApp = () => {
         return [...prev, performer];
       }
     });
-  }, [currentPage]);
+  };
 
   const findClosestEats = () => {
-    if (currentPage === 'festival-detail') {
+    if (!gpsEnabled) {
       setBubbleNotifications(prev => [...prev, {
         id: Date.now(),
-        text: "🍕 Closest food: Pizza Paradise - 0.1 miles north",
-        type: "location",
+        text: "📍 Enable GPS for precise directions to food venues",
+        type: "info",
         icon: Map
       }]);
+      requestGPSPermission();
+      return;
     }
+    
+    setBubbleNotifications(prev => [...prev, {
+      id: Date.now(),
+      text: "🍕 GPS Routing: Pizza Paradise - 0.1 miles north, 2 min walk",
+      type: "location",
+      icon: Map
+    }]);
+    setTimeout(() => {
+      setBubbleNotifications(prev => [...prev, {
+        id: Date.now(),
+        text: "🗺️ Map opened with turn-by-turn directions",
+        type: "navigation",
+        icon: Map
+      }]);
+    }, 1000);
   };
 
   const findClosestBathrooms = () => {
-    if (currentPage === 'festival-detail') {
+    if (!gpsEnabled) {
       setBubbleNotifications(prev => [...prev, {
         id: Date.now(),
-        text: "🚻 Nearest restrooms: Behind Main Stage - 0.05 miles",
-        type: "location", 
+        text: "📍 Enable GPS for precise directions to restrooms",
+        type: "info",
         icon: Map
       }]);
+      requestGPSPermission();
+      return;
     }
+    
+    setBubbleNotifications(prev => [...prev, {
+      id: Date.now(),
+      text: "🚻 GPS Routing: Restrooms behind Main Stage - 0.05 miles, 1 min walk",
+      type: "location", 
+      icon: Map
+    }]);
+    setTimeout(() => {
+      setBubbleNotifications(prev => [...prev, {
+        id: Date.now(),
+        text: "🗺️ Map opened with turn-by-turn directions",
+        type: "navigation",
+        icon: Map
+      }]);
+    }, 1000);
   };
 
-  // Simulate notifications appearing as bubbles - only when festival is selected
+  // Simulate notifications appearing as bubbles
   useEffect(() => {
     if (currentPage !== 'festival-detail' || !selectedFestival) return;
 
